@@ -1,0 +1,2982 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>База знаний</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0C0C0E;
+    --surface: #141418;
+    --surface2: #1C1C22;
+    --border: rgba(255,255,255,0.07);
+    --gold: #D4A843;
+    --gold2: #F0C96A;
+    --text: #F0EDE8;
+    --muted: #6B6870;
+    --accent-red: #E85454;
+    --accent-blue: #4A9EFF;
+    --accent-green: #4ACA8A;
+    --accent-purple: #A87AFF;
+    --accent-orange: #FF8A4A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(12,12,14,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  
+  .logo-mark {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .admin-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .admin-btn:active { transform: scale(0.92); }
+  .admin-btn.active {
+    background: rgba(212,168,67,0.15);
+    border-color: var(--gold);
+  }
+
+  /* SEARCH */
+  .search-wrap {
+    padding: 14px 20px 0;
+  }
+  .search-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus-within {
+    border-color: rgba(212,168,67,0.4);
+  }
+  .search-box span { font-size: 16px; color: var(--muted); }
+  .search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    width: 100%;
+  }
+  .search-box input::placeholder { color: var(--muted); }
+
+  /* CATEGORIES SCROLL */
+  .cats-wrap {
+    padding: 14px 20px 0;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .cats-wrap::-webkit-scrollbar { display: none; }
+
+  .cat-pill {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .cat-pill.active {
+    background: rgba(212,168,67,0.15);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .cat-pill-edit {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-radius: 100px;
+    border: 1px dashed var(--border);
+    background: none;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .admin-mode .cat-pill-edit { display: flex; align-items: center; }
+  .cat-pill-edit { display: none; }
+
+  /* CATEGORY EDITOR MODAL */
+  .cat-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 250;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .cat-modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  .cat-modal {
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 600px;
+    max-height: 80vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 20px 48px;
+    animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1);
+  }
+  .cat-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cat-item:last-child { border-bottom: none; }
+  .cat-item input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    outline: none;
+  }
+  .cat-item input:focus { border-color: var(--gold); }
+  .cat-item-del {
+    background: rgba(232,84,84,0.1);
+    border: none; color: var(--accent-red);
+    font-size: 16px; cursor: pointer;
+    padding: 6px 10px; border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  /* SECTION HEADER */
+  .section-label {
+    padding: 20px 20px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* CARDS */
+  .cards-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, opacity 0.2s;
+    animation: fadeSlide 0.35s ease both;
+  }
+  .card.dragging { opacity: 0.4; box-shadow: 0 0 0 2px var(--gold); }
+  .card.drag-over { box-shadow: 0 -3px 0 0 var(--gold); }
+
+  .card-drag-handle {
+    display: none;
+    width: 28px;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
+    user-select: none;
+  }
+  .card-drag-handle:active { cursor: grabbing; color: var(--gold); }
+  .admin-mode .card-drag-handle { display: flex; }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 500;
+  }
+
+  .card-chevron {
+    color: var(--muted);
+    font-size: 18px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+  }
+  .card.open .card-chevron { transform: rotate(90deg); }
+
+  .card-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 16px 18px;
+  }
+  .card.open .card-body { display: block; }
+
+  /* SUBSECTIONS */
+  .subsection {
+    margin-bottom: 16px;
+  }
+  .subsection:last-child { margin-bottom: 0; }
+
+  .subsection-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--gold);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .subsection-content {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(240,237,232,0.85);
+    font-weight: 400;
+  }
+
+  .subsection-content ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .subsection-content li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .subsection-content li::before {
+    content: '▸';
+    color: var(--gold);
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 11px;
+  }
+
+  /* CHECKLIST */
+  .checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .checklist-item:last-child { border-bottom: none; }
+
+  .check-box {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+  .check-box.checked {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+  }
+  .check-box.checked::after {
+    content: '✓';
+    font-size: 12px;
+    color: white;
+    font-weight: 700;
+  }
+
+  .check-label {
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .check-label.done {
+    opacity: 0.4;
+    text-decoration: line-through;
+  }
+
+  /* TAGS */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    margin: 3px 3px 3px 0;
+  }
+
+  /* LINKS */
+  .link-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .link-item:active { transform: scale(0.97); }
+  .link-icon { font-size: 20px; }
+  .link-name { font-size: 13px; font-weight: 600; }
+  .link-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .link-arrow { margin-left: auto; color: var(--muted); }
+
+  /* EXAMPLES */
+  .example-card {
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .example-good { background: rgba(74,202,138,0.08); border: 1px solid rgba(74,202,138,0.2); }
+  .example-bad { background: rgba(232,84,84,0.08); border: 1px solid rgba(232,84,84,0.2); }
+  .example-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .good-label { color: var(--accent-green); }
+  .bad-label { color: var(--accent-red); }
+  .example-text { font-size: 13px; line-height: 1.6; }
+
+  /* ====== RENDERED CONTENT BLOCKS ====== */
+  .blocks-wrap { display: flex; flex-direction: column; gap: 10px; }
+
+  .b-text {
+    font-size: 13px;
+    line-height: 1.75;
+    color: rgba(240,237,232,0.85);
+  }
+
+  .b-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .b-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(240,237,232,0.85);
+  }
+  .b-list li::before {
+    content: '▸';
+    color: var(--gold);
+    flex-shrink: 0;
+    font-size: 10px;
+    margin-top: 3px;
+  }
+
+  .b-image { border-radius: 12px; overflow: hidden; }
+  .b-image img {
+    width: 100%; display: block; border-radius: 12px; cursor: pointer;
+  }
+  .b-image-caption {
+    font-size: 11px; color: var(--muted); text-align: center;
+    margin-top: 5px; font-weight: 500;
+  }
+
+  .b-link {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    text-decoration: none; color: var(--text);
+    transition: all 0.15s;
+  }
+  .b-link:active { transform: scale(0.97); background: rgba(212,168,67,0.07); }
+  .b-link-icon { font-size: 22px; flex-shrink: 0; }
+  .b-link-info { flex: 1; min-width: 0; }
+  .b-link-name { font-size: 13px; font-weight: 700; }
+  .b-link-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .b-link-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+  .b-tip {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 13px;
+    font-size: 13px; line-height: 1.6; font-weight: 500;
+  }
+  .b-tip-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .b-tip.green  { background: rgba(74,202,138,0.09);  border: 1px solid rgba(74,202,138,0.22);  color: #a8f0cc; }
+  .b-tip.orange { background: rgba(255,138,74,0.09);  border: 1px solid rgba(255,138,74,0.22);  color: #ffc49a; }
+  .b-tip.blue   { background: rgba(74,158,255,0.09);  border: 1px solid rgba(74,158,255,0.22);  color: #a0caff; }
+  .b-tip.red    { background: rgba(232,84,84,0.09);   border: 1px solid rgba(232,84,84,0.22);   color: #ffaaaa; }
+
+  .b-checklist { display: flex; flex-direction: column; }
+  .b-check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  .b-check-item:last-child { border-bottom: none; }
+  .b-check-box {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; margin-top: 1px;
+  }
+  .b-check-box.checked { background: var(--accent-green); border-color: var(--accent-green); }
+  .b-check-box.checked::after { content: '✓'; font-size: 12px; color: white; font-weight: 700; }
+  .b-check-label { font-size: 13px; line-height: 1.5; font-weight: 500; transition: opacity 0.2s; }
+  .b-check-label.done { opacity: 0.4; text-decoration: line-through; }
+
+  .b-divider { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+
+  /* ====== BLOCK EDITOR ====== */
+  .block-editor-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
+
+  .block-editor-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, opacity 0.2s;
+  }
+  .block-editor-item.dragging { opacity: 0.4; box-shadow: 0 0 0 2px var(--gold); }
+  .block-editor-item.drag-over { box-shadow: 0 -3px 0 0 var(--gold); }
+
+  .block-editor-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .block-editor-header:active { cursor: grabbing; }
+  .block-type-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 100px;
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge-text     { background: rgba(74,158,255,0.15);  color: #6db8ff; }
+  .badge-list     { background: rgba(212,168,67,0.15);  color: var(--gold); }
+  .badge-image    { background: rgba(168,122,255,0.15); color: #c4a0ff; }
+  .badge-link     { background: rgba(74,202,138,0.15);  color: #6fe0ab; }
+  .badge-tip      { background: rgba(255,138,74,0.15);  color: #ffb07a; }
+  .badge-checklist{ background: rgba(74,202,138,0.12);  color: #6fe0ab; }
+  .badge-divider  { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+  .block-del-btn {
+    margin-left: auto;
+    background: none; border: none;
+    color: var(--muted); font-size: 14px;
+    cursor: pointer; padding: 2px 6px;
+    border-radius: 6px; transition: color 0.2s;
+  }
+  .block-del-btn:hover { color: var(--accent-red); }
+
+  .block-editor-body { padding: 10px; }
+  .block-editor-body .form-input,
+  .block-editor-body .form-textarea,
+  .block-editor-body .form-select { background: var(--surface2); margin-bottom: 7px; }
+  .block-editor-body .form-input:last-child,
+  .block-editor-body .form-textarea:last-child { margin-bottom: 0; }
+
+  .block-img-preview {
+    width: 100%; max-height: 110px; object-fit: cover;
+    border-radius: 8px; margin-bottom: 7px; display: none;
+  }
+  .block-img-preview.visible { display: block; }
+
+  .block-upload-row { display: flex; gap: 6px; }
+  .block-upload-row .add-item-btn { flex: 1; }
+
+  .block-upload-prog {
+    display: none; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; color: var(--accent-blue);
+    padding: 6px 0;
+  }
+  .block-upload-prog.visible { display: flex; }
+
+  /* Block type picker popup */
+  .block-picker {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+    animation: fadeSlide 0.2s ease;
+  }
+  .block-picker.open { display: flex; }
+  .block-pick-opt {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer; color: var(--text);
+    transition: all 0.15s;
+  }
+  .block-pick-opt:active { transform: scale(0.93); }
+
+  /* Tip color selector */
+  .tip-color-row { display: flex; gap: 8px; margin-bottom: 7px; }
+  .tip-color-opt {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+  }
+  .tip-color-opt.sel { border-color: white; transform: scale(1.1); }
+  .tip-green  { background: rgba(74,202,138,0.4); }
+  .tip-orange { background: rgba(255,138,74,0.4); }
+  .tip-blue   { background: rgba(74,158,255,0.4); }
+  .tip-red    { background: rgba(232,84,84,0.4); }
+
+  /* ADMIN PANEL */
+  .admin-bar {
+    display: none;
+    padding: 10px 16px;
+    background: rgba(212,168,67,0.06);
+    border-bottom: 1px solid rgba(212,168,67,0.2);
+    align-items: center;
+    gap: 10px;
+  }
+  .admin-bar.visible { display: flex; }
+  .admin-bar-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+    flex: 1;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn:active { transform: scale(0.94); }
+  .btn-gold { background: var(--gold); color: #0C0C0E; }
+  .btn-ghost { background: var(--surface2); color: var(--text); }
+  .btn-red { background: rgba(232,84,84,0.15); color: var(--accent-red); }
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+
+  .card-admin-actions {
+    display: none;
+    gap: 6px;
+    padding: 0 18px 14px;
+  }
+  .admin-mode .card-admin-actions { display: flex; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 600px;
+    padding: 20px 20px 40px;
+    animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 20px;
+  }
+
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+    color: var(--text);
+  }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: rgba(212,168,67,0.5);
+  }
+  .form-select option { background: var(--surface2); }
+
+  .emoji-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .emoji-opt {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .emoji-opt.selected {
+    border-color: var(--gold);
+    background: rgba(212,168,67,0.15);
+  }
+
+  .color-picker {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .color-opt {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .color-opt.selected { border-color: white; transform: scale(1.1); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions .btn { flex: 1; padding: 13px; font-size: 14px; border-radius: 14px; }
+
+  /* PASSWORD */
+  .pwd-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 300;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .pwd-screen.open { display: flex; }
+  .pwd-logo {
+    font-size: 48px;
+    margin-bottom: 10px;
+  }
+  .pwd-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .pwd-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; text-align: center; }
+  .pwd-input-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 14px;
+  }
+  .pwd-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 4px;
+    transition: border-color 0.2s;
+  }
+  .pwd-input:focus { border-color: var(--gold); }
+  .pwd-input.error { border-color: var(--accent-red); }
+  .pwd-error { color: var(--accent-red); font-size: 12px; font-weight: 600; height: 16px; margin-bottom: 10px; }
+  .pwd-submit {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0C0C0E;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* ADD BLOCK BUTTON */
+  .add-card-btn {
+    margin: 12px 16px 0;
+    background: rgba(212,168,67,0.06);
+    border: 1.5px dashed rgba(212,168,67,0.3);
+    border-radius: 18px;
+    padding: 16px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .admin-mode .add-card-btn { display: flex; }
+  .add-card-btn:active { transform: scale(0.97); }
+
+  /* ICON COLORS */
+  .ic-red { background: rgba(232,84,84,0.15); }
+  .ic-blue { background: rgba(74,158,255,0.15); }
+  .ic-green { background: rgba(74,202,138,0.15); }
+  .ic-purple { background: rgba(168,122,255,0.15); }
+  .ic-orange { background: rgba(255,138,74,0.15); }
+  .ic-gold { background: rgba(212,168,67,0.15); }
+  .ic-pink { background: rgba(255,100,150,0.15); }
+  .ic-teal { background: rgba(0,200,200,0.15); }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 8px 0;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    z-index: 500;
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* SCROLL */
+  ::-webkit-scrollbar { display: none; }
+
+  .no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Subsection editor */
+  .subsec-editor {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px 14px 38px;
+    margin-bottom: 10px;
+    position: relative;
+    transition: box-shadow 0.2s, opacity 0.2s;
+  }
+  .subsec-editor.dragging { opacity: 0.4; box-shadow: 0 0 0 2px var(--gold); }
+  .subsec-editor.drag-over { box-shadow: 0 -3px 0 0 var(--gold); }
+  .subsec-editor .form-input { margin-bottom: 8px; }
+
+  .drag-handle {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 34px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: grab;
+    border-radius: 14px 0 0 14px;
+    touch-action: none;
+    user-select: none;
+  }
+  .drag-handle:active { cursor: grabbing; color: var(--gold); }
+
+  .subsec-del {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(232,84,84,0.1);
+    border: none;
+    color: var(--accent-red);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    line-height: 1;
+  }
+  .add-subsec {
+    width: 100%;
+    padding: 8px;
+    background: none;
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* Subsection tabs */
+  .subsec-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .subsec-tab {
+    flex: 1;
+    padding: 6px 4px;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .subsec-tab.active {
+    background: var(--surface);
+    color: var(--gold);
+  }
+  .subsec-panel { display: none; }
+  .subsec-panel.active { display: block; }
+
+  /* Image items in editor */
+  .img-item-editor {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .img-item-editor input { margin-bottom: 6px; }
+  .img-item-editor input:last-of-type { margin-bottom: 0; }
+  .img-preview {
+    width: 100%;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: none;
+  }
+  .img-preview.visible { display: block; }
+  .item-del-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: rgba(232,84,84,0.15);
+    border: none;
+    color: var(--accent-red);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 6px;
+  }
+
+  /* Link items in editor */
+  .link-item-editor {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .link-item-editor input { margin-bottom: 6px; }
+  .link-item-editor input:last-of-type { margin-bottom: 0; }
+  .link-emoji-input {
+    width: 52px !important;
+    text-align: center;
+    font-size: 20px;
+  }
+  .link-row { display: flex; gap: 6px; }
+  .link-row .form-input:first-child { width: 52px; flex-shrink: 0; }
+  .link-row .form-input:last-child { flex: 1; }
+
+  .add-item-btn {
+    width: 100%;
+    padding: 7px;
+    background: none;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 2px;
+    transition: all 0.2s;
+  }
+  .add-item-btn:active { opacity: 0.7; }
+
+  /* Upload area */
+  .upload-area {
+    border: 1.5px dashed rgba(212,168,67,0.25);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+  .upload-area:hover { border-color: rgba(212,168,67,0.5); background: rgba(212,168,67,0.03); }
+  .upload-area-text { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .upload-area-icon { font-size: 22px; margin-bottom: 4px; }
+
+  /* RENDERED images */
+  .subsec-images { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .subsec-img-wrap { border-radius: 12px; overflow: hidden; position: relative; }
+  .subsec-img-wrap img {
+    width: 100%;
+    display: block;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+  .subsec-img-caption {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  /* RENDERED links */
+  .subsec-links { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  .subsec-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .subsec-link:active { transform: scale(0.97); background: rgba(212,168,67,0.07); }
+  .subsec-link-icon { font-size: 22px; flex-shrink: 0; }
+  .subsec-link-info { flex: 1; min-width: 0; }
+  .subsec-link-name { font-size: 13px; font-weight: 700; }
+  .subsec-link-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .subsec-link-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 14px;
+    object-fit: contain;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    font-size: 20px;
+    width: 38px; height: 38px;
+    border-radius: 100px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Upload progress */
+  .upload-progress {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(74,158,255,0.08);
+    border: 1px solid rgba(74,158,255,0.2);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+  }
+  .upload-progress.visible { display: flex; }
+  .upload-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(74,158,255,0.3);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Settings panel */
+  .settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 250;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+  }
+  .settings-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  .settings-panel {
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 600px;
+    max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 20px 60px;
+    animation: slideUp 0.3s cubic-bezier(0.22,1,0.36,1);
+  }
+  .settings-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 20px;
+  }
+  .settings-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .settings-sub {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .settings-steps {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .settings-step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .settings-step:last-child { margin-bottom: 0; }
+  .step-num {
+    width: 22px; height: 22px;
+    background: rgba(212,168,67,0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--gold);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-link { color: var(--accent-blue); font-weight: 600; }
+  .api-key-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .api-key-status.set { background: rgba(74,202,138,0.1); color: var(--accent-green); border: 1px solid rgba(74,202,138,0.2); }
+  .api-key-status.unset { background: rgba(255,138,74,0.1); color: var(--accent-orange); border: 1px solid rgba(255,138,74,0.2); }
+  .settings-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .settings-actions .btn { flex: 1; padding: 13px; font-size: 14px; border-radius: 14px; }
+  .imgbb-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(74,202,138,0.12);
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent-green);
+    border: 1px solid rgba(74,202,138,0.2);
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .imgbb-badge.warn {
+    background: rgba(255,138,74,0.12);
+    color: var(--accent-orange);
+    border-color: rgba(255,138,74,0.2);
+  }
+
+  /* SYNC STATUS */
+  .sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    display: inline-block; margin-right: 5px;
+    vertical-align: middle;
+  }
+  .sync-dot.synced  { background: var(--accent-green); }
+  .sync-dot.syncing { background: var(--accent-blue); animation: pulse 1s infinite; }
+  .sync-dot.local   { background: var(--accent-orange); }
+  .sync-dot.error   { background: var(--accent-red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .sync-label {
+    font-size: 10px; font-weight: 700;
+    color: var(--muted); vertical-align: middle;
+    letter-spacing: 0.3px;
+  }
+
+  /* ACCESS / PASSWORD SCREEN */
+  .access-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 400;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .access-screen.open { display: flex; }
+  .access-icon { font-size: 56px; margin-bottom: 16px; animation: float 2s ease-in-out infinite; }
+  .access-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .access-sub {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 260px;
+  }
+  .access-input-wrap { width: 100%; max-width: 320px; margin-bottom: 12px; }
+  .access-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    outline: none;
+    text-align: center;
+    letter-spacing: 3px;
+    transition: border-color 0.2s;
+  }
+  .access-input:focus { border-color: var(--gold); }
+  .access-input.error { border-color: var(--accent-red); animation: shake 0.3s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)}
+  }
+  .access-error { color: var(--accent-red); font-size: 12px; font-weight: 600; height: 16px; margin-bottom: 12px; }
+  .access-btn {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0C0C0E;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* LOADING SCREEN */
+  .loading-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+  }
+  .loading-screen.hidden { display: none; }
+  .loading-logo { font-size: 48px; animation: float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .loading-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .loading-spinner {
+    width: 28px; height: 28px;
+    border: 3px solid rgba(212,168,67,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-sub { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .loading-error {
+    display: none;
+    font-size: 12px; color: var(--accent-red); font-weight: 600;
+    text-align: center; max-width: 260px; line-height: 1.5;
+  }
+  .loading-error.visible { display: block; }
+  .loading-retry {
+    display: none;
+    padding: 10px 24px; border-radius: 100px;
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border);
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .loading-retry.visible { display: block; }
+
+  /* settings section divider */
+  .settings-section-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted);
+    margin: 20px 0 10px;
+  }
+  .settings-section-title:first-of-type { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<!-- ACCESS / PASSWORD SCREEN -->
+<div class="access-screen" id="accessScreen">
+  <div class="access-icon">📚</div>
+  <div class="access-title">База знаний</div>
+  <div class="access-sub" id="accessSub">Введи пароль для доступа</div>
+  <div class="access-input-wrap" id="serviceKeyWrap" style="display:none; margin-bottom:10px;">
+    <input type="password" class="access-input" id="serviceKeyInput" placeholder="Service Key (один раз)"
+      style="font-size:11px; letter-spacing:0; text-align:left; padding:12px 14px;"
+      onkeydown="if(event.key==='Enter') checkAccessPassword()">
+    <div style="font-size:11px; color:var(--muted); margin-top:6px; text-align:left; padding: 0 4px;">
+      🔑 Нужен один раз для первоначальной установки пароля. Хранится только на этом устройстве.
+    </div>
+  </div>
+  <div class="access-input-wrap">
+    <input type="password" class="access-input" id="accessInput" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter') checkAccessPassword()">
+  </div>
+  <div class="access-error" id="accessError"></div>
+  <button class="access-btn" onclick="checkAccessPassword()">Войти</button>
+</div>
+
+<!-- LOADING SCREEN -->
+<div class="loading-screen hidden" id="loadingScreen">
+  <div class="loading-logo">📚</div>
+  <div class="loading-title">База знаний</div>
+  <div class="loading-spinner" id="loadingSpinner"></div>
+  <div class="loading-sub" id="loadingSub">Загрузка данных...</div>
+  <div class="loading-error" id="loadingError"></div>
+  <button class="loading-retry" id="loadingRetry" onclick="init()">Попробовать снова</button>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettingsOutside(event)">
+  <div class="settings-panel">
+    <div class="settings-handle"></div>
+    <div class="settings-title">⚙️ Настройки</div>
+
+    <!-- SUPABASE SECTION -->
+    <div class="settings-section-title">☁️ Синхронизация (Supabase)</div>
+    <div class="settings-sub" style="margin-top:-6px">Данные надёжно закрыты. Все читают через публичный ключ, пишешь только ты через секретный.</div>
+
+    <div class="api-key-status unset" id="jsonbinStatus">⚠️ Service Key не настроен — только чтение</div>
+
+    <div class="settings-steps" style="margin-bottom:12px">
+      <div class="settings-step">
+        <div class="step-num">1</div>
+        <div>Зайди на <b>supabase.com</b> → создай новый проект (бесплатно)</div>
+      </div>
+      <div class="settings-step">
+        <div class="step-num">2</div>
+        <div>В проекте: <b>Settings → API</b> → скопируй <b>URL</b> и <b>anon key</b> → передай их разработчику для вшивания в код</div>
+      </div>
+      <div class="settings-step">
+        <div class="step-num">3</div>
+        <div>Там же скопируй <b>service_role key</b> — это твой секретный ключ для записи. Вставь ниже</div>
+      </div>
+      <div class="settings-step">
+        <div class="step-num">4</div>
+        <div>В Supabase: <b>Table Editor → New table</b> → назови <b>cards</b> → добавь колонку <b>data</b> (тип: text)</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Supabase Service Key (только для админа)</label>
+      <input type="password" class="form-input" id="jsonbinKeyInput" placeholder="eyJhbGci...">
+    </div>
+    <input type="hidden" id="jsonbinIdInput" value="supabase">
+    <button class="btn btn-gold" style="width:100%;padding:12px;border-radius:12px;font-size:14px;margin-bottom:4px" onclick="saveJsonbinSettings()">Сохранить и синхронизировать</button>
+
+    <!-- IMGBB SECTION -->
+    <div class="settings-section-title">🖼️ Хостинг изображений (imgbb)</div>
+
+    <div class="api-key-status unset" id="apiKeyStatus">⚠️ API-ключ не настроен — загрузка файлов недоступна</div>
+
+    <div class="settings-steps">
+      <div class="settings-step">
+        <div class="step-num">1</div>
+        <div>Открой <span class="step-link">imgbb.com</span> и зарегистрируйся (бесплатно)</div>
+      </div>
+      <div class="settings-step">
+        <div class="step-num">2</div>
+        <div>Перейди на <span class="step-link">api.imgbb.com</span> → скопируй ключ</div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:10px">
+      <label class="form-label">imgbb API Key</label>
+      <input type="text" class="form-input" id="imgbbKeyInput" placeholder="Вставь ключ сюда...">
+    </div>
+
+    <div class="settings-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">Закрыть</button>
+      <button class="btn btn-gold" onclick="saveApiKey()">Сохранить imgbb</button>
+    </div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="settings-section-title" style="margin-top:0">🔑 Пароль доступа</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Пароль для входа в базу знаний. Хранится в Supabase — не в коде.</div>
+      <div class="form-group">
+        <label class="form-label">Новый пароль</label>
+        <input type="text" class="form-input" id="newPasswordInput" placeholder="Введи новый пароль...">
+      </div>
+      <button class="btn btn-gold" style="width:100%;padding:12px;border-radius:12px;font-size:13px;margin-bottom:16px" onclick="changeAccessPassword()">🔑 Сменить пароль</button>
+    </div>
+
+    <div style="margin-top:0;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="settings-section-title" style="margin-top:0">🔁 Сброс данных</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Если карточки пропали — восстанови стандартный набор и загрузи его в облако.</div>
+      <button class="btn btn-red" style="width:100%;padding:12px;border-radius:12px;font-size:13px" onclick="restoreDefaults()">⚠️ Восстановить стандартные карточки</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- PASSWORD SCREEN -->
+<div class="pwd-screen" id="pwdScreen">
+  <div class="pwd-logo">🔐</div>
+  <div class="pwd-title">ADMIN РЕЖИМ</div>
+  <div class="pwd-sub">Введите пароль для доступа к редактированию</div>
+  <input type="password" class="pwd-input" id="pwdInput" placeholder="••••••" maxlength="20">
+  <div class="pwd-error" id="pwdError"></div>
+  <button class="pwd-submit" onclick="checkPassword()">ВОЙТИ</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Новый блок</div>
+
+    <div class="form-group">
+      <label class="form-label">Название блока</label>
+      <input type="text" class="form-input" id="fTitle" placeholder="Например: Стандарты канала">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Краткое описание</label>
+      <input type="text" class="form-input" id="fSubtitle" placeholder="Короткий подзаголовок">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Иконка</label>
+      <div class="emoji-picker" id="emojiPicker">
+        🚀📋🎬🖼️📤🛠️✅🔥❓💡📊🎯🔗📌🧩💬📝🔍💎⚡
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Цвет иконки</label>
+      <div class="color-picker" id="colorPicker">
+        <div class="color-opt selected" style="background:rgba(232,84,84,0.3)" data-color="ic-red"></div>
+        <div class="color-opt" style="background:rgba(74,158,255,0.3)" data-color="ic-blue"></div>
+        <div class="color-opt" style="background:rgba(74,202,138,0.3)" data-color="ic-green"></div>
+        <div class="color-opt" style="background:rgba(168,122,255,0.3)" data-color="ic-purple"></div>
+        <div class="color-opt" style="background:rgba(255,138,74,0.3)" data-color="ic-orange"></div>
+        <div class="color-opt" style="background:rgba(212,168,67,0.3)" data-color="ic-gold"></div>
+        <div class="color-opt" style="background:rgba(255,100,150,0.3)" data-color="ic-pink"></div>
+        <div class="color-opt" style="background:rgba(0,200,200,0.3)" data-color="ic-teal"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Подразделы</label>
+      <div id="subsecList"></div>
+      <button class="add-subsec" onclick="addSubsecField()">+ Добавить подраздел</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-gold" onclick="saveCard()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-mark">📚</div>
+    <div>
+      <div class="header-title">База знаний</div>
+      <div id="syncStatus" style="margin-top:1px">
+        <span class="sync-dot local"></span>
+        <span class="sync-label">локально</span>
+      </div>
+    </div>
+  </div>
+  <div class="admin-btn" id="adminBtn" onclick="toggleAdmin()">⚙️</div>
+</div>
+
+<!-- ADMIN BAR -->
+<div class="admin-bar" id="adminBar">
+  <div class="admin-bar-text">✏️ Режим редактирования</div>
+  <button class="btn btn-ghost btn-sm" onclick="openSettings()">⚙️ Настройки</button>
+  <button class="btn btn-ghost btn-sm" onclick="exitAdmin()">Выйти</button>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-box">
+    <span>🔍</span>
+    <input type="text" placeholder="Поиск по базе знаний..." id="searchInput" oninput="filterCards()">
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="cats-wrap" id="catsWrap"></div>
+
+<!-- CATEGORY EDITOR MODAL -->
+<div class="cat-modal-overlay" id="catModalOverlay" onclick="if(event.target===this)closeCatModal()">
+  <div class="cat-modal">
+    <div class="settings-handle"></div>
+    <div class="settings-title">✏️ Категории</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Переименуй, удали или добавь новые категории. Карточки с удалённой категорией останутся без фильтра.</div>
+    <div id="catEditorList"></div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:12px;padding:12px;border-radius:12px" onclick="addCatField()">＋ Добавить категорию</button>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn btn-ghost" style="flex:1;padding:12px;border-radius:12px" onclick="closeCatModal()">Отмена</button>
+      <button class="btn btn-gold" style="flex:1;padding:12px;border-radius:12px" onclick="saveCats()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- CARDS -->
+<div class="section-label" id="cardsLabel">ВСЕ РАЗДЕЛЫ</div>
+<div class="cards-list" id="cardsList"></div>
+
+<div class="add-card-btn" id="addCardBtn" onclick="openAddModal()">
+  ＋ Добавить новый блок
+</div>
+
+<script>
+// ===================== DATA =====================
+const ADMIN_PASSWORD = 'adminroottoor'; // Смените пароль!
+
+const defaultCards = [
+  {
+    id: 1,
+    icon: '🚀',
+    color: 'ic-orange',
+    title: 'Онбординг',
+    subtitle: 'Старт без лишних вопросов',
+    category: 'Основы',
+    subsections: [
+      { title: '👋 Добро пожаловать', content: 'Краткое приветствие новых сотрудников.\n• Наша миссия и ценности\n• Чего мы ожидаем от тебя\n• Чего ты можешь ожидать от нас' },
+      { title: '🔑 Доступы и инструменты', content: '• YouTube Studio — попроси у руководителя\n• CapCut Pro — логин в общем хранилище\n• ChatGPT Team — ссылка от ответственного\n• Notion — приглашение на почту' },
+      { title: '👥 Команда', content: '• Главред: принимает решения по контенту\n• Монтажёр: отвечает за видео и шортсы\n• SMM: выкладка, теги, расписание\n• Если вопрос — сначала в Notion, потом в чат' },
+      { title: '📅 Первая неделя', content: '• День 1: Прочитать всю базу знаний\n• День 2-3: Ознакомиться с архивом контента\n• День 4: Первое задание от руководителя\n• День 5: Синк с командой' }
+    ]
+  },
+  {
+    id: 2,
+    icon: '📋',
+    color: 'ic-blue',
+    title: 'Стандарты канала',
+    subtitle: 'Дух и голос контента',
+    category: 'Основы',
+    subsections: [
+      { title: '🎯 Тематика', content: 'Описание тематики канала, основные темы и ниши. Что мы освещаем и что нет. Наша специализация и экспертиза.' },
+      { title: '🗣️ Tone of Voice', content: '• Говорим уважительно, но без официоза\n• Избегаем жаргона и слов-паразитов\n• Делаем сложное простым\n• Примеры: "Это работает вот так" — хорошо. "Данная технология предполагает..." — плохо.' },
+      { title: '🚫 Запрещённые темы', content: '• Политика и религия\n• Реклама без согласования\n• Личные данные без разрешения\n• Непроверенная информация' },
+      { title: '👥 Аудитория', content: 'Наш зритель: возраст, интересы, боли. Что ему важно видеть, что его раздражает. Пиши как для умного друга, не как для протокола.' }
+    ]
+  },
+  {
+    id: 3,
+    icon: '🎬',
+    color: 'ic-red',
+    title: 'Шортсы — полный гайд',
+    subtitle: 'Монтаж, AI, заголовки',
+    category: 'Контент',
+    subsections: [
+      { title: '✂️ Монтаж из основного ролика', content: '• Ищи пик смысла: 30-60 сек с сильной мыслью\n• Темп: резкие склейки, без пауз\n• Начало — с крюка (без "Привет, сегодня мы...")\n• Конец — вывод или интрига\n• Субтитры обязательны, шрифт крупный' },
+      { title: '🤖 Создание через AI', content: '• Инструменты: Opus Clip, Vizard.ai, CapCut Auto\n• Промпт для вырезки: "Найди самые вирусные 60 секунд"\n• Всегда проверяй результат вручную\n• AI — помощник, не замена монтажёру' },
+      { title: '📝 Названия и описания', content: '• Формула заголовка: [Проблема] + [Решение] или [Цифра] + [Результат]\n• Примеры удачных: "3 ошибки, которые убивают просмотры"\n• Запрещённые слова: "топ", "лучший", "невероятный"\n• Описание: 1-2 предложения + 3-5 тегов' }
+    ]
+  },
+  {
+    id: 4,
+    icon: '🖼️',
+    color: 'ic-purple',
+    title: 'Обложки',
+    subtitle: 'Шаблоны, цвета, шрифты',
+    category: 'Контент',
+    subsections: [
+      { title: '🎨 Стиль и брендинг', content: '• Основной цвет: [укажи hex]\n• Акцентный цвет: [укажи hex]\n• Шрифт заголовка: [название]\n• Логотип: всегда в правом верхнем углу' },
+      { title: '📐 Правила композиции', content: '• Крупный текст (читается с телефона!)\n• Лицо/эмоция слева, текст справа\n• Правило третей\n• Контраст: тёмный фон + светлый текст или наоборот' },
+      { title: '✅ Работает / ❌ Не работает', content: '✅ Крупный шрифт + сильная эмоция\n✅ Минимум элементов\n✅ Яркий контраст\n\n❌ Мелкий текст\n❌ Больше 3 цветов\n❌ Скучное выражение лица' },
+      { title: '🔗 Файлы', content: 'Шаблоны в Figma/Canva — ссылка у руководителя.\nПри создании новой обложки дублируй шаблон, не редактируй оригинал.' }
+    ]
+  },
+  {
+    id: 5,
+    icon: '📤',
+    color: 'ic-green',
+    title: 'Выкладка контента',
+    subtitle: 'Чеклист и расписание',
+    category: 'Процессы',
+    type: 'checklist',
+    subsections: [
+      { title: '☑️ Чеклист перед публикацией', content: '• Проверь заголовок по формуле\n• Убедись, что обложка по брендбуку\n• Теги проставлены (5-8 штук)\n• Описание заполнено\n• Время публикации согласовано\n• Уведомил команду в чате' },
+      { title: '📅 Расписание выхода', content: 'Основное видео: [дни недели]\nШортсы: [дни недели]\nСторис/посты: [дни]\n\nЛучшее время для публикации: [укажи для своей аудитории]' },
+      { title: '👤 Ответственность', content: '• Монтаж → монтажёр\n• Обложка → дизайнер/SMM\n• Публикация → SMM\n• Проверка → главред (за 2 ч до выхода)' }
+    ]
+  },
+  {
+    id: 6,
+    icon: '🛠️',
+    color: 'ic-gold',
+    title: 'Инструменты и доступы',
+    subtitle: 'Все сервисы команды',
+    category: 'Инструменты',
+    subsections: [
+      { title: '🎥 CapCut Pro', content: '• Для монтажа шортсов и основных роликов\n• Логины: в общем хранилище паролей\n• Туториал: [ссылка]\n• Вопросы: в чат команды' },
+      { title: '🤖 ChatGPT / Claude', content: '• Для написания сценариев, заголовков, описаний\n• Аккаунт командный, не делитесь логином\n• Промпты-шаблоны: раздел "Шортсы"\n• Лимит: экономьте токены' },
+      { title: '🎨 Midjourney / Canva', content: '• Midjourney: для создания обложек и иллюстраций\n• Canva Pro: шаблоны обложек команды\n• Figma: основной дизайн-инструмент' },
+      { title: '📊 YouTube Studio', content: '• Аналитика каналов\n• Планирование публикаций\n• Ответы на комментарии\n• Доступ выдаёт руководитель' }
+    ]
+  },
+  {
+    id: 7,
+    icon: '✅',
+    color: 'ic-teal',
+    title: 'Чеклисты',
+    subtitle: 'Пошаговые инструкции',
+    category: 'Процессы',
+    subsections: [
+      { title: '🎬 Чеклист: Монтаж ролика', content: '• Получил исходники\n• Просмотрел весь материал\n• Отметил лучшие моменты\n• Смонтировал черновик\n• Отправил на правку\n• Внёс правки\n• Финальный экспорт\n• Загрузил в облако' },
+      { title: '📲 Чеклист: Публикация', content: '• Видео загружено в Studio\n• Обложка установлена\n• Заголовок по формуле\n• Описание заполнено\n• Теги проставлены\n• Расписание выставлено\n• Команда уведомлена' },
+      { title: '🖼️ Чеклист: Обложка', content: '• Открыл шаблон (не оригинал!)\n• Заменил текст\n• Проверил шрифты и цвета\n• Экспорт 1280×720 JPG\n• Проверил на мобильном\n• Загрузил на Drive' }
+    ]
+  },
+  {
+    id: 8,
+    icon: '🔥',
+    color: 'ic-red',
+    title: 'Примеры и антипримеры',
+    subtitle: 'Что работает и почему',
+    category: 'Практика',
+    subsections: [
+      { title: '✅ Примеры успеха', content: 'Реальные кейсы с канала:\n• [Видео №1] — почему зашло: сильный крюк, точная тема\n• [Видео №2] — результат: +X просмотров за 24ч\n• [Шортс] — виральность: правильный момент, правильный монтаж' },
+      { title: '❌ Антипримеры', content: 'Что не сработало и почему:\n• Слабый заголовок → мало кликов\n• Длинное вступление → высокий drop-off\n• Плохая обложка → плохой CTR\n• Неактуальная тема → нет органики' },
+      { title: '📈 Закономерности', content: 'Что стабильно работает:\n• Списки и цифры в заголовке\n• Провокационный вопрос\n• Эмоция на обложке\n• Первые 3 секунды — всё решают' }
+    ]
+  },
+  {
+    id: 9,
+    icon: '❓',
+    color: 'ic-purple',
+    title: 'FAQ',
+    subtitle: 'Частые вопросы',
+    category: 'Основы',
+    subsections: [
+      { title: 'Где брать доступы?', content: 'Все доступы — у руководителя. Пиши в личку с пометкой "нужен доступ к [сервис]". Не делитесь паролями с внешними людьми.' },
+      { title: 'Кто согласует контент?', content: 'Готовое видео/шортс отправляется главреду за 24 часа до публикации. Главред даёт добро или правки.' },
+      { title: 'Что делать если нет исходников?', content: 'Пишешь в командный чат с описанием задачи. Не начинай работу без исходных материалов.' },
+      { title: 'Можно ли использовать чужой контент?', content: 'Только с разрешения или если это Fair Use. При сомнениях — спрашивай руководителя. Нарушение авторских прав = проблемы для всего канала.' },
+      { title: 'Как действовать в кризисной ситуации?', content: 'Скандал в комментариях, негатив, техническая ошибка → не делаем ничего самостоятельно. Сразу сообщаем руководителю.' }
+    ]
+  }
+];
+
+// ===================== STATE =====================
+let cards = defaultCards;
+let isAdmin = false;
+let editingId = null;
+let selectedEmoji = '📋';
+let selectedColor = 'ic-red';
+let activeCategory = 'Все';
+let searchQuery = '';
+
+let _pollTimer = null;
+let _lastHash  = '';
+let _isSaving  = false;
+
+// ===================== CLOUD CONFIG (Supabase) =====================
+// ANON KEY — безопасно вшит в код, даёт только чтение (RLS защищает запись)
+// SERVICE KEY — хранится только в телефоне админа, никогда не попадает в код
+const SB_URL      = 'https://xycwenxkfgpqdnqkqjbi.supabase.co';
+const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5Y3dlbnhrZmdwcWRucWtxamJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NzUzODgsImV4cCI6MjA4OTM1MTM4OH0.DyemXedDXegmneb8daxlOTgCj_Vxzbbf-Di2mKeyo0c';
+
+function getSBServiceKey() { return localStorage.getItem('sb_service_key') || ''; }
+
+function sbHeaders(write = false) {
+  const key = write ? getSBServiceKey() : SB_ANON_KEY;
+  return {
+    'Content-Type': 'application/json',
+    'apikey': key,
+    'Authorization': 'Bearer ' + key
+  };
+}
+
+// ===================== HASH HELPER =====================
+function hashCards(data) {
+  const str = JSON.stringify(data);
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return String(h);
+}
+
+let _accessGranted = false;
+
+// ===================== INIT =====================
+async function init() {
+  try { Telegram.WebApp.expand(); Telegram.WebApp.ready(); } catch(e) {}
+
+  if (!SB_URL || !SB_ANON_KEY) {
+    const local = localStorage.getItem('kb_cards');
+    if (local) cards = JSON.parse(local);
+    _lastHash = hashCards(cards);
+    setSyncStatus('local', 'только локально');
+    hideLoading();
+    renderCategories();
+    renderCards();
+    return;
+  }
+
+  // Always show password screen on fresh load
+  hideLoading();
+  document.getElementById('accessScreen').classList.add('open');
+}
+
+async function checkAccessPassword() {
+  const input = document.getElementById('accessInput');
+  const errorEl = document.getElementById('accessError');
+  const pwd = input.value.trim();
+
+  if (!pwd) { errorEl.textContent = 'Введи пароль'; return; }
+
+  errorEl.textContent = '⏳ Проверка...';
+  input.disabled = true;
+
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/settings?key=eq.access_password&select=value`,
+      { headers: sbHeaders(false) }
+    );
+
+    // If table doesn't exist or error — show specific message
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('Settings fetch error:', res.status, errText);
+      if (res.status === 404 || errText.includes('does not exist')) {
+        errorEl.textContent = '⚠️ Таблица settings не создана в Supabase';
+        input.disabled = false;
+        return;
+      }
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const rows = await res.json();
+
+    if (!rows.length) {
+      // No password set yet — need service key to save it
+      const skInput = document.getElementById('serviceKeyInput');
+      const skWrap  = document.getElementById('serviceKeyWrap');
+      const skVal   = skInput ? skInput.value.trim() : '';
+
+      if (!skVal && !getSBServiceKey()) {
+        // Show service key field so user can provide it
+        skWrap.style.display = 'block';
+        document.getElementById('accessSub').textContent = 'Первый запуск: введи Service Key и задай пароль';
+        errorEl.textContent = '⚠️ Введи Service Key выше (один раз)';
+        input.disabled = false;
+        if (skInput) skInput.focus();
+        return;
+      }
+
+      // Save service key if provided on screen
+      if (skVal) {
+        localStorage.setItem('sb_service_key', skVal);
+      }
+
+      const saved = await setInitialPassword(pwd);
+      if (saved) {
+        if (skWrap) skWrap.style.display = 'none';
+        grantAccess();
+      } else {
+        errorEl.textContent = '⚠️ Не удалось сохранить пароль. Проверь Service Key.';
+        input.disabled = false;
+      }
+      return;
+    }
+
+    const correctPwd = rows[0].value;
+    if (pwd === correctPwd) {
+      grantAccess();
+    } else {
+      input.classList.add('error');
+      setTimeout(() => input.classList.remove('error'), 400);
+      errorEl.textContent = 'Неверный пароль';
+      input.value = '';
+      input.disabled = false;
+      input.focus();
+    }
+  } catch(e) {
+    console.error('checkAccessPassword error:', e);
+    errorEl.textContent = 'Ошибка: ' + e.message;
+    input.disabled = false;
+  }
+}
+
+async function setInitialPassword(pwd) {
+  const serviceKey = getSBServiceKey();
+  if (!serviceKey) return false;
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/settings`, {
+      method: 'POST',
+      headers: { ...sbHeaders(true), 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ key: 'access_password', value: pwd })
+    });
+    return res.ok;
+  } catch(e) {
+    return false;
+  }
+}
+
+function grantAccess() {
+  _accessGranted = true;
+  document.getElementById('accessScreen').classList.remove('open');
+  showLoading('Загрузка базы знаний...');
+  loadData();
+}
+
+async function loadData() {
+  try {
+    // Load categories and cards in parallel
+    const [remote] = await Promise.all([
+      sbFetch(),
+      loadCatsFromCloud()
+    ]);
+    if (isRealData(remote)) {
+      cards = remote;
+      localStorage.setItem('kb_cards', JSON.stringify(cards));
+    } else {
+      const local = localStorage.getItem('kb_cards');
+      cards = local ? JSON.parse(local) : defaultCards;
+    }
+    _lastHash = hashCards(cards);
+    setSyncStatus('synced', 'синхронизировано');
+    startPolling();
+  } catch(e) {
+    const local = localStorage.getItem('kb_cards');
+    if (local) cards = JSON.parse(local);
+    _lastHash = hashCards(cards);
+    setSyncStatus('error', 'ошибка — офлайн');
+    showLoadingError('Не удалось загрузить данные.');
+    await sleep(1800);
+    startPolling();
+  }
+  hideLoading();
+  renderCategories();
+  renderCards();
+}
+
+function isRealData(remote) {
+  if (!Array.isArray(remote) || remote.length === 0) return false;
+  if (remote.length === 1 && remote[0].init === true) return false;
+  return true;
+}
+
+// Read all cards from Supabase
+async function sbFetch() {
+  const res = await fetch(`${SB_URL}/rest/v1/cards?select=data&order=id.asc`, {
+    headers: sbHeaders(false)
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const rows = await res.json();
+  // Data stored as single row with id=1, column "data" = JSON array
+  if (!rows.length) return [];
+  return JSON.parse(rows[0].data);
+}
+
+// ===================== POLLING =====================
+const POLL_INTERVAL = 10000;
+
+function startPolling() {
+  stopPolling();
+  _pollTimer = setInterval(pollRemote, POLL_INTERVAL);
+}
+
+function stopPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+async function pollRemote() {
+  if (_isSaving || !SB_URL) return;
+  try {
+    const remote = await sbFetch();
+    if (!isRealData(remote)) return;
+    const remoteHash = hashCards(remote);
+    if (remoteHash !== _lastHash) {
+      cards = remote;
+      localStorage.setItem('kb_cards', JSON.stringify(cards));
+      _lastHash = remoteHash;
+      renderCategories();
+      renderCards();
+      setSyncStatus('synced', 'обновлено');
+      showToast('🔄 База знаний обновлена');
+    } else {
+      setSyncStatus('synced', 'синхронизировано');
+    }
+  } catch(e) {
+    setSyncStatus('error', 'нет связи');
+  }
+}
+
+// ===================== SAVE (push to Supabase) =====================
+async function saveData() {
+  localStorage.setItem('kb_cards', JSON.stringify(cards));
+  _lastHash = hashCards(cards);
+
+  const serviceKey = getSBServiceKey();
+  if (!SB_URL || !serviceKey) {
+    setSyncStatus('local', 'только локально');
+    return;
+  }
+
+  _isSaving = true;
+  setSyncStatus('syncing', 'сохранение...');
+  try {
+    // Upsert single row id=1
+    const res = await fetch(`${SB_URL}/rest/v1/cards`, {
+      method: 'POST',
+      headers: {
+        ...sbHeaders(true),
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ id: 1, data: JSON.stringify(cards) })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`HTTP ${res.status}: ${err}`);
+    }
+    setSyncStatus('synced', 'синхронизировано');
+  } catch(e) {
+    setSyncStatus('error', 'ошибка сохранения');
+    showToast('⚠️ Данные сохранены локально');
+    console.error('saveData error:', e);
+  } finally {
+    _isSaving = false;
+  }
+}
+
+// ===================== SETTINGS SUPABASE =====================
+function openSettings() {
+  const serviceKey = getSBServiceKey();
+  const imgKey = localStorage.getItem('imgbb_key') || '';
+  document.getElementById('jsonbinKeyInput').value = serviceKey;
+  document.getElementById('imgbbKeyInput').value   = imgKey;
+  updateJsonbinStatus(!!serviceKey);
+  updateApiKeyStatus(imgKey);
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function updateJsonbinStatus(ok) {
+  const el = document.getElementById('jsonbinStatus');
+  if (ok) {
+    el.className = 'api-key-status set';
+    el.textContent = '✅ Service Key настроен — запись активна';
+  } else {
+    el.className = 'api-key-status unset';
+    el.textContent = '⚠️ Service Key не настроен — только чтение';
+  }
+}
+
+async function saveJsonbinSettings() {
+  const key = document.getElementById('jsonbinKeyInput').value.trim();
+  if (!key) { showToast('⚠️ Введи Supabase Service Key'); return; }
+  if (!SB_URL) { showToast('⚠️ Supabase URL не настроен в коде'); return; }
+
+  showToast('⏳ Проверяем ключ...');
+  try {
+    // Test write access
+    const res = await fetch(`${SB_URL}/rest/v1/cards?select=id&limit=1`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': key,
+        'Authorization': 'Bearer ' + key
+      }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    localStorage.setItem('sb_service_key', key);
+    updateJsonbinStatus(true);
+    showToast('✅ Ключ сохранён! Загружаю данные в Supabase...');
+    await saveData();
+    startPolling();
+    closeSettings();
+  } catch(e) {
+    showToast(`❌ Ошибка: ${e.message} — проверь ключ`);
+  }
+}
+
+// ===================== SYNC HELPERS =====================
+function setSyncStatus(state, label) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.innerHTML = `<span class="sync-dot ${state}"></span><span class="sync-label">${label}</span>`;
+}
+
+function showLoading(msg) {
+  document.getElementById('loadingScreen').classList.remove('hidden');
+  document.getElementById('loadingSub').textContent = msg;
+  document.getElementById('loadingSpinner').style.display = 'block';
+  document.getElementById('loadingError').classList.remove('visible');
+  document.getElementById('loadingRetry').classList.remove('visible');
+}
+
+function showLoadingError(msg) {
+  document.getElementById('loadingSpinner').style.display = 'none';
+  document.getElementById('loadingError').textContent = msg;
+  document.getElementById('loadingError').classList.add('visible');
+  document.getElementById('loadingRetry').classList.add('visible');
+  document.getElementById('loadingSub').textContent = 'Работаем в офлайн-режиме';
+}
+
+function hideLoading() {
+  document.getElementById('loadingScreen').classList.add('hidden');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ===================== CATEGORIES =====================
+
+function renderCategories() {
+  const wrap = document.getElementById('catsWrap');
+  const cats = getCategories();
+  wrap.innerHTML = cats.map(c => `
+    <div class="cat-pill ${c === activeCategory ? 'active' : ''}" onclick="selectCategory('${c}')">${c}</div>
+  `).join('') + `<button class="cat-pill-edit" onclick="openCatModal()">✏️</button>`;
+}
+
+// ===================== CATEGORY EDITOR =====================
+function openCatModal() {
+  const cats = getCategories().filter(c => c !== 'Все');
+  const list = document.getElementById('catEditorList');
+  list.innerHTML = '';
+  cats.forEach(c => addCatField(c));
+  document.getElementById('catModalOverlay').classList.add('open');
+}
+
+function closeCatModal() {
+  document.getElementById('catModalOverlay').classList.remove('open');
+}
+
+function addCatField(value = '') {
+  const list = document.getElementById('catEditorList');
+  const div = document.createElement('div');
+  div.className = 'cat-item';
+  div.innerHTML = `
+    <input type="text" value="${escHtml(value)}" placeholder="Название категории">
+    <button class="cat-item-del" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(div);
+}
+
+function saveCats() {
+  const inputs = document.querySelectorAll('#catEditorList .cat-item input');
+  const newCats = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+  closeCatModal();
+  activeCategory = 'Все';
+
+  // Save to Supabase if connected, else localStorage fallback
+  saveCatsToCloud(newCats).then(() => {
+    localStorage.setItem('kb_custom_cats', JSON.stringify(newCats));
+    renderCategories();
+    renderCards();
+    showToast('✅ Категории обновлены');
+  });
+}
+
+async function saveCatsToCloud(cats) {
+  const serviceKey = getSBServiceKey();
+  if (!SB_URL || !serviceKey) {
+    localStorage.setItem('kb_custom_cats', JSON.stringify(cats));
+    return;
+  }
+  try {
+    await fetch(`${SB_URL}/rest/v1/settings`, {
+      method: 'POST',
+      headers: { ...sbHeaders(true), 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ key: 'custom_categories', value: JSON.stringify(cats) })
+    });
+  } catch(e) {
+    localStorage.setItem('kb_custom_cats', JSON.stringify(cats));
+  }
+}
+
+async function loadCatsFromCloud() {
+  if (!SB_URL || !SB_ANON_KEY) return;
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/settings?key=eq.custom_categories&select=value`,
+      { headers: sbHeaders(false) }
+    );
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (rows.length) {
+      const cats = JSON.parse(rows[0].value);
+      localStorage.setItem('kb_custom_cats', JSON.stringify(cats));
+    }
+  } catch(e) {}
+}
+
+function getCategories() {
+  const fromCards = [...new Set(cards.map(c => c.category).filter(Boolean))];
+  const custom = JSON.parse(localStorage.getItem('kb_custom_cats') || 'null');
+  if (custom) {
+    const merged = [...custom];
+    fromCards.forEach(c => { if (!merged.includes(c)) merged.push(c); });
+    return ['Все', ...merged];
+  }
+  return ['Все', ...fromCards];
+}
+
+function selectCategory(cat) {
+  activeCategory = cat;
+  document.getElementById('cardsLabel').textContent = cat === 'Все' ? 'ВСЕ РАЗДЕЛЫ' : cat.toUpperCase();
+  renderCategories();
+  renderCards();
+}
+
+// ===================== SEARCH =====================
+function filterCards() {
+  searchQuery = document.getElementById('searchInput').value.toLowerCase();
+  renderCards();
+}
+
+function cardMatchesSearch(card, q) {
+  if (!q) return true;
+  // Search title and subtitle
+  if (card.title.toLowerCase().includes(q)) return true;
+  if (card.subtitle.toLowerCase().includes(q)) return true;
+  // Deep search all subsections and blocks
+  return card.subsections.some(s => {
+    if (s.title && s.title.toLowerCase().includes(q)) return true;
+    const blocks = getBlocks(s);
+    return blocks.some(b => {
+      if (b.text && b.text.toLowerCase().includes(q)) return true;
+      if (b.name && b.name.toLowerCase().includes(q)) return true;
+      if (b.desc && b.desc.toLowerCase().includes(q)) return true;
+      if (b.items && b.items.some(it => it.toLowerCase().includes(q))) return true;
+      if (b.caption && b.caption.toLowerCase().includes(q)) return true;
+      if (s.content && s.content.toLowerCase().includes(q)) return true;
+      return false;
+    });
+  });
+}
+
+// ===================== RENDER CARDS =====================
+function renderCards() {
+  const list = document.getElementById('cardsList');
+  let filtered = cards;
+
+  if (activeCategory !== 'Все') {
+    filtered = filtered.filter(c => c.category === activeCategory);
+  }
+  if (searchQuery) {
+    filtered = filtered.filter(c => cardMatchesSearch(c, searchQuery));
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="no-results">🔍 Ничего не найдено</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map((card, i) => renderCard(card, i)).join('');
+
+  // Re-attach open states
+  document.querySelectorAll('.card').forEach(el => {
+    el.querySelector('.card-header').addEventListener('click', function(e) {
+      if (e.target.closest('.card-admin-actions') || e.target.closest('.card-drag-handle')) return;
+      el.classList.toggle('open');
+    });
+  });
+
+  // Enable drag-to-reorder in admin mode
+  if (isAdmin) {
+    makeSortable(list, 'card', '.card-drag-handle', (newOrder) => {
+      // Reorder cards array based on new DOM order
+      const idOrder = newOrder.map(el => parseInt(el.id.replace('card-', '')));
+      cards = idOrder.map(id => cards.find(c => c.id === id)).filter(Boolean);
+      saveData();
+    });
+  }
+}
+
+function renderCard(card, i) {
+  const subsectionsHtml = card.subsections.map(s => {
+    const blocks = getBlocks(s);
+    const blocksHtml = blocks.map(b => renderBlock(b)).join('');
+    return `
+      <div class="subsection">
+        <div class="subsection-title">${s.title}</div>
+        <div class="blocks-wrap">${blocksHtml}</div>
+      </div>`;
+  }).join('<hr class="divider">');
+
+  return `
+    <div class="card" id="card-${card.id}" style="animation-delay:${i*0.05}s">
+      <div class="card-header">
+        <div class="card-drag-handle">⠿</div>
+        <div class="card-icon ${card.color}">${card.icon}</div>
+        <div class="card-info">
+          <div class="card-title">${card.title}</div>
+          <div class="card-subtitle">${card.subtitle}</div>
+        </div>
+        <div class="card-chevron">›</div>
+      </div>
+      <div class="card-body">${subsectionsHtml}</div>
+      <div class="card-admin-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEditModal(${card.id})">✏️ Редактировать</button>
+        <button class="btn btn-red btn-sm" onclick="deleteCard(${card.id})">🗑️</button>
+      </div>
+    </div>`;
+}
+
+// Convert old format (content/images/links) to blocks
+function getBlocks(s) {
+  if (s.blocks && s.blocks.length) return s.blocks;
+  const blocks = [];
+  if (s.content && s.content.trim()) {
+    const lines = s.content.split('\n');
+    const listLines = lines.filter(l => l.startsWith('•'));
+    const textLines = lines.filter(l => !l.startsWith('•') && l.trim());
+    if (textLines.length) blocks.push({ type: 'text', text: textLines.join('\n') });
+    if (listLines.length) blocks.push({ type: 'list', items: listLines.map(l => l.replace(/^•\s*/, '')) });
+  }
+  if (s.images) s.images.forEach(img => blocks.push({ type: 'image', url: img.url, caption: img.caption || '' }));
+  if (s.links) s.links.forEach(l => blocks.push({ type: 'link', icon: l.icon||'🔗', name: l.name, url: l.url, desc: l.desc||'' }));
+  return blocks;
+}
+
+function renderBlock(b) {
+  switch (b.type) {
+    case 'text':
+      return `<div class="b-text">${b.text.replace(/\n/g,'<br>')}</div>`;
+
+    case 'list':
+      return `<ul class="b-list">${(b.items||[]).map(it=>`<li>${escHtml(it)}</li>`).join('')}</ul>`;
+
+    case 'image':
+      return `<div class="b-image">
+        <img src="${escHtml(b.url)}" loading="lazy" onclick="openLightbox('${escHtml(b.url)}')">
+        ${b.caption ? `<div class="b-image-caption">${escHtml(b.caption)}</div>` : ''}
+      </div>`;
+
+    case 'link':
+      return `<a class="b-link" href="${escHtml(b.url)}" target="_blank" rel="noopener">
+        <div class="b-link-icon">${b.icon||'🔗'}</div>
+        <div class="b-link-info">
+          <div class="b-link-name">${escHtml(b.name||'')}</div>
+          ${b.desc ? `<div class="b-link-desc">${escHtml(b.desc)}</div>` : ''}
+        </div>
+        <div class="b-link-arrow">›</div>
+      </a>`;
+
+    case 'tip': {
+      const icons = { green:'💡', orange:'⚠️', blue:'ℹ️', red:'🚨' };
+      return `<div class="b-tip ${b.color||'green'}">
+        <div class="b-tip-icon">${icons[b.color||'green']}</div>
+        <div>${b.text.replace(/\n/g,'<br>')}</div>
+      </div>`;
+    }
+
+    case 'checklist':
+      return `<div class="b-checklist">${(b.items||[]).map((it,idx)=>`
+        <div class="b-check-item" onclick="toggleCheck(this)">
+          <div class="b-check-box"></div>
+          <div class="b-check-label">${escHtml(it)}</div>
+        </div>`).join('')}</div>`;
+
+    case 'divider':
+      return `<hr class="b-divider">`;
+
+    default: return '';
+  }
+}
+
+function toggleCheck(el) {
+  el.querySelector('.b-check-box').classList.toggle('checked');
+  el.querySelector('.b-check-label').classList.toggle('done');
+}
+
+// ===================== ADMIN =====================
+function toggleAdmin() {
+  if (isAdmin) { exitAdmin(); return; }
+  document.getElementById('pwdScreen').classList.add('open');
+  setTimeout(() => document.getElementById('pwdInput').focus(), 300);
+}
+
+function checkPassword() {
+  const pwd = document.getElementById('pwdInput').value;
+  if (pwd === ADMIN_PASSWORD) {
+    document.getElementById('pwdScreen').classList.remove('open');
+    document.getElementById('pwdInput').value = '';
+    document.getElementById('pwdError').textContent = '';
+    enableAdmin();
+  } else {
+    document.getElementById('pwdError').textContent = 'Неверный пароль';
+    document.getElementById('pwdInput').classList.add('error');
+    setTimeout(() => document.getElementById('pwdInput').classList.remove('error'), 600);
+  }
+}
+
+document.getElementById('pwdInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+function enableAdmin() {
+  isAdmin = true;
+  document.body.classList.add('admin-mode');
+  document.getElementById('adminBar').classList.add('visible');
+  document.getElementById('adminBtn').classList.add('active');
+  showToast('✏️ Режим редактирования включён');
+  renderCards();
+}
+
+function exitAdmin() {
+  isAdmin = false;
+  document.body.classList.remove('admin-mode');
+  document.getElementById('adminBar').classList.remove('visible');
+  document.getElementById('adminBtn').classList.remove('active');
+  showToast('✅ Режим редактирования выключен');
+  renderCards();
+}
+
+function deleteCard(id) {
+  if (!confirm('Удалить этот блок?')) return;
+  cards = cards.filter(c => c.id !== id);
+  saveData();
+  renderCategories();
+  renderCards();
+  showToast('🗑️ Блок удалён');
+}
+
+// ===================== MODAL =====================
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Новый блок';
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fSubtitle').value = '';
+  selectedEmoji = '📋';
+  selectedColor = 'ic-red';
+  renderEmojiPicker();
+  renderColorPicker();
+  const list = document.getElementById('subsecList');
+  list.innerHTML = '';
+  addSubsecField();
+  makeSortable(list, 'subsec-editor', '.drag-handle');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function openEditModal(id) {
+  const card = cards.find(c => c.id === id);
+  if (!card) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = 'Редактировать блок';
+  document.getElementById('fTitle').value = card.title;
+  document.getElementById('fSubtitle').value = card.subtitle;
+  selectedEmoji = card.icon;
+  selectedColor = card.color;
+  renderEmojiPicker();
+  renderColorPicker();
+
+  const list = document.getElementById('subsecList');
+  list.innerHTML = '';
+  card.subsections.forEach(s => {
+    const blocks = getBlocks(s);
+    addSubsecField(s.title, blocks);
+  });
+  makeSortable(list, 'subsec-editor', '.drag-handle');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function saveCard() {
+  const title = document.getElementById('fTitle').value.trim();
+  const subtitle = document.getElementById('fSubtitle').value.trim();
+  if (!title) { showToast('⚠️ Введите название'); return; }
+
+  const subsecs = [];
+  document.querySelectorAll('.subsec-editor').forEach(el => {
+    const t = el.querySelector('.subsec-title-input').value.trim();
+    const blocks = collectBlocks(el);
+    if (t || blocks.length) subsecs.push({ title: t || '—', blocks });
+  });
+
+  if (editingId) {
+    const idx = cards.findIndex(c => c.id === editingId);
+    if (idx > -1) cards[idx] = { ...cards[idx], title, subtitle, icon: selectedEmoji, color: selectedColor, subsections: subsecs };
+    showToast('✅ Блок обновлён');
+  } else {
+    cards.push({ id: Date.now(), icon: selectedEmoji, color: selectedColor, title, subtitle, category: 'Основы', subsections: subsecs });
+    showToast('✅ Блок добавлен');
+  }
+
+  saveData(); renderCategories(); renderCards(); closeModal();
+}
+
+function collectBlocks(subsecEl) {
+  const blocks = [];
+  subsecEl.querySelectorAll('.block-editor-item').forEach(el => {
+    const type = el.dataset.blockType;
+    if (type === 'text') {
+      const text = el.querySelector('.be-text').value.trim();
+      if (text) blocks.push({ type, text });
+    } else if (type === 'list') {
+      const raw = el.querySelector('.be-list').value.trim();
+      const items = raw.split('\n').map(l => l.replace(/^[-•]\s*/,'')).filter(Boolean);
+      if (items.length) blocks.push({ type, items });
+    } else if (type === 'image') {
+      const url = el.querySelector('.be-img-url').value.trim();
+      const caption = el.querySelector('.be-img-caption').value.trim();
+      if (url) blocks.push({ type, url, caption });
+    } else if (type === 'link') {
+      const icon = el.querySelector('.be-link-icon').value.trim() || '🔗';
+      const name = el.querySelector('.be-link-name').value.trim();
+      const url = el.querySelector('.be-link-url').value.trim();
+      const desc = el.querySelector('.be-link-desc').value.trim();
+      if (name && url) blocks.push({ type, icon, name, url, desc });
+    } else if (type === 'tip') {
+      const text = el.querySelector('.be-tip-text').value.trim();
+      const color = el.querySelector('.tip-color-opt.sel')?.dataset.color || 'green';
+      if (text) blocks.push({ type, text, color });
+    } else if (type === 'checklist') {
+      const raw = el.querySelector('.be-checklist').value.trim();
+      const items = raw.split('\n').map(l => l.replace(/^[-•✓]\s*/,'')).filter(Boolean);
+      if (items.length) blocks.push({ type, items });
+    } else if (type === 'divider') {
+      blocks.push({ type });
+    }
+  });
+  return blocks;
+}
+
+// ===================== BLOCK EDITOR =====================
+let subsecCounter = 0;
+let blockCounter = 0;
+
+function addSubsecField(title = '', blocks = []) {
+  const list = document.getElementById('subsecList');
+  const sid = ++subsecCounter;
+  const div = document.createElement('div');
+  div.className = 'subsec-editor';
+  div.innerHTML = `
+    <div class="drag-handle" title="Перетащить">⠿</div>
+    <button class="subsec-del" onclick="this.parentElement.remove()">✕</button>
+    <input type="text" class="form-input subsec-title-input" placeholder="Название подраздела" value="${escHtml(title)}" style="padding-right:42px">
+    <div class="block-editor-list" id="blist-${sid}"></div>
+    <div class="block-picker" id="bpicker-${sid}">
+      <div class="block-pick-opt" onclick="addBlock(${sid},'text')">📝 Текст</div>
+      <div class="block-pick-opt" onclick="addBlock(${sid},'list')">• Список</div>
+      <div class="block-pick-opt" onclick="addBlock(${sid},'checklist')">✅ Чеклист</div>
+      <div class="block-pick-opt" onclick="addBlock(${sid},'link')">🔗 Ссылка</div>
+      <div class="block-pick-opt" onclick="addBlock(${sid},'image')">🖼️ Фото</div>
+      <div class="block-pick-opt" onclick="addBlock(${sid},'tip')">💡 Заметка</div>
+      <div class="block-pick-opt" onclick="addBlock(${sid},'divider')">— Разделитель</div>
+    </div>
+    <button class="add-item-btn" style="width:100%;margin-top:4px" onclick="togglePicker(${sid})">＋ Добавить блок</button>
+  `;
+  list.appendChild(div);
+  makeSortable(div.querySelector(`#blist-${sid}`), 'block-editor-item', '.block-editor-header');
+  blocks.forEach(b => addBlock(sid, b.type, b));
+}
+
+function togglePicker(sid) {
+  document.getElementById('bpicker-' + sid).classList.toggle('open');
+}
+
+function addBlock(sid, type, data = {}) {
+  const bid = ++blockCounter;
+  const container = document.getElementById('blist-' + sid);
+  if (!container) return;
+  const item = document.createElement('div');
+  item.className = 'block-editor-item';
+  item.dataset.blockType = type;
+
+  const labels = { text:'📝 Текст', list:'• Список', image:'🖼️ Фото', link:'🔗 Ссылка', tip:'💡 Заметка', checklist:'✅ Чеклист', divider:'— Разделитель' };
+  const badges = { text:'badge-text', list:'badge-list', image:'badge-image', link:'badge-link', tip:'badge-tip', checklist:'badge-checklist', divider:'badge-divider' };
+
+  let body = '';
+  if (type === 'text') {
+    body = `<textarea class="form-textarea be-text" placeholder="Введи текст..." rows="3">${escHtml(data.text||'')}</textarea>`;
+  } else if (type === 'list') {
+    const val = (data.items||[]).join('\n');
+    body = `<textarea class="form-textarea be-list" placeholder="Каждый пункт с новой строки" rows="4">${escHtml(val)}</textarea>`;
+  } else if (type === 'checklist') {
+    const val = (data.items||[]).join('\n');
+    body = `<textarea class="form-textarea be-checklist" placeholder="Каждый пункт с новой строки" rows="4">${escHtml(val)}</textarea>`;
+  } else if (type === 'link') {
+    body = `
+      <div style="display:flex;gap:6px;margin-bottom:7px">
+        <input class="form-input be-link-icon" placeholder="🔗" value="${escHtml(data.icon||'')}" style="width:52px;flex-shrink:0;text-align:center;font-size:18px">
+        <input class="form-input be-link-name" placeholder="Название" value="${escHtml(data.name||'')}" style="flex:1">
+      </div>
+      <input class="form-input be-link-url" placeholder="https://..." value="${escHtml(data.url||'')}">
+      <input class="form-input be-link-desc" placeholder="Описание (необязательно)" value="${escHtml(data.desc||'')}" style="margin-top:7px">`;
+  } else if (type === 'image') {
+    const hasUrl = !!(data.url);
+    body = `
+      <div class="block-upload-prog" id="buprog-${bid}"><div class="upload-spinner"></div><span>Загрузка...</span></div>
+      <img class="block-img-preview ${hasUrl?'visible':''}" src="${escHtml(data.url||'')}" id="bprev-${bid}">
+      <input type="file" accept="image/*" id="bfile-${bid}" style="display:none" onchange="uploadBlockImage(this,${bid})">
+      <input class="form-input be-img-url" placeholder="URL изображения" value="${escHtml(data.url||'')}" id="burl-${bid}" oninput="previewBlockImg(${bid})" style="margin-bottom:7px">
+      <input class="form-input be-img-caption" placeholder="Подпись (необязательно)" value="${escHtml(data.caption||'')}">
+      <button class="add-item-btn" style="width:100%;margin-top:7px" onclick="triggerBlockUpload(${bid})">⬆️ Загрузить файл <span class="imgbb-badge" id="bibadge-${bid}">●</span></button>`;
+  } else if (type === 'tip') {
+    const color = data.color || 'green';
+    body = `
+      <div class="tip-color-row">
+        <div class="tip-color-opt tip-green ${color==='green'?'sel':''}" data-color="green" onclick="selectTipColor(this)" title="Совет"></div>
+        <div class="tip-color-opt tip-orange ${color==='orange'?'sel':''}" data-color="orange" onclick="selectTipColor(this)" title="Предупреждение"></div>
+        <div class="tip-color-opt tip-blue ${color==='blue'?'sel':''}" data-color="blue" onclick="selectTipColor(this)" title="Инфо"></div>
+        <div class="tip-color-opt tip-red ${color==='red'?'sel':''}" data-color="red" onclick="selectTipColor(this)" title="Важно"></div>
+      </div>
+      <textarea class="form-textarea be-tip-text" placeholder="Текст заметки..." rows="2">${escHtml(data.text||'')}</textarea>`;
+  } else if (type === 'divider') {
+    body = `<div style="text-align:center;font-size:11px;color:var(--muted);padding:4px 0">— горизонтальная линия —</div>`;
+  }
+
+  item.innerHTML = `
+    <div class="block-editor-header" title="Перетащить">
+      <span style="color:var(--muted);font-size:13px;flex-shrink:0">⠿</span>
+      <span class="block-type-badge ${badges[type]}">${labels[type]}</span>
+      <button class="block-del-btn" onclick="this.closest('.block-editor-item').remove()">✕</button>
+    </div>
+    <div class="block-editor-body">${body}</div>`;
+
+  container.appendChild(item);
+  document.getElementById('bpicker-' + sid)?.classList.remove('open');
+  updateAllBadges();
+}
+
+function selectTipColor(el) {
+  el.closest('.tip-color-row').querySelectorAll('.tip-color-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function previewBlockImg(bid) {
+  const url = document.getElementById('burl-' + bid).value.trim();
+  const prev = document.getElementById('bprev-' + bid);
+  if (url) { prev.src = url; prev.classList.add('visible'); }
+  else prev.classList.remove('visible');
+}
+
+function triggerBlockUpload(bid) {
+  const key = localStorage.getItem('imgbb_key');
+  if (!key) { showToast('⚠️ Сначала настрой imgbb API-ключ'); openSettings(); return; }
+  document.getElementById('bfile-' + bid).click();
+}
+
+async function uploadBlockImage(input, bid) {
+  const key = localStorage.getItem('imgbb_key');
+  const file = input.files[0];
+  input.value = '';
+  if (!file || !key) return;
+  const prog = document.getElementById('buprog-' + bid);
+  prog.classList.add('visible');
+  try {
+    const base64 = await fileToBase64(file);
+    const fd = new FormData();
+    fd.append('image', base64.split(',')[1]);
+    fd.append('name', file.name.replace(/\.[^.]+$/,''));
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${key}`, { method:'POST', body:fd });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('burl-' + bid).value = data.data.url;
+      previewBlockImg(bid);
+      showToast('✅ Фото загружено!');
+    } else showToast('❌ ' + (data.error?.message || 'Ошибка загрузки'));
+  } catch(e) { showToast('❌ Ошибка соединения'); }
+  prog.classList.remove('visible');
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = () => rej(new Error('read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ===================== SETTINGS =====================
+function openSettings() {
+  const binId  = localStorage.getItem('jsonbin_id') || '';
+  const binKey = localStorage.getItem('jsonbin_key') || '';
+  const imgKey = localStorage.getItem('imgbb_key') || '';
+
+  document.getElementById('jsonbinIdInput').value  = binId;
+  document.getElementById('jsonbinKeyInput').value = binKey;
+  document.getElementById('imgbbKeyInput').value   = imgKey;
+
+  updateJsonbinStatus(binId && binKey);
+  updateApiKeyStatus(imgKey);
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function updateJsonbinStatus(ok) {
+  const el = document.getElementById('jsonbinStatus');
+  if (ok) {
+    el.className = 'api-key-status set';
+    el.textContent = '✅ Синхронизация настроена';
+  } else {
+    el.className = 'api-key-status unset';
+    el.textContent = '⚠️ Не настроено — данные только локальные';
+  }
+}
+
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function closeSettingsOutside(e) {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+}
+
+function saveApiKey() {
+  const key = document.getElementById('imgbbKeyInput').value.trim();
+  if (!key) { showToast('⚠️ Введи API-ключ'); return; }
+  localStorage.setItem('imgbb_key', key);
+  updateApiKeyStatus(key);
+  showToast('✅ API-ключ сохранён!');
+  closeSettings();
+  updateAllBadges();
+}
+
+function updateApiKeyStatus(key) {
+  const el = document.getElementById('apiKeyStatus');
+  if (key) {
+    el.className = 'api-key-status set';
+    el.textContent = '✅ API-ключ настроен — загрузка активна';
+  } else {
+    el.className = 'api-key-status unset';
+    el.textContent = '⚠️ API-ключ не настроен — загрузка файлов недоступна';
+  }
+}
+
+async function changeAccessPassword() {
+  const pwd = document.getElementById('newPasswordInput').value.trim();
+  if (!pwd) { showToast('⚠️ Введи новый пароль'); return; }
+  const serviceKey = getSBServiceKey();
+  if (!serviceKey) { showToast('⚠️ Сначала настрой Service Key'); return; }
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/settings`, {
+      method: 'POST',
+      headers: { ...sbHeaders(true), 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ key: 'access_password', value: pwd })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    document.getElementById('newPasswordInput').value = '';
+    showToast('✅ Пароль обновлён!');
+  } catch(e) {
+    showToast('❌ Ошибка: ' + e.message);
+  }
+}
+
+async function restoreDefaults() {
+  if (!confirm('Восстановить стандартные карточки? Текущие данные будут заменены.')) return;
+  cards = JSON.parse(JSON.stringify(defaultCards));
+  localStorage.setItem('kb_cards', JSON.stringify(cards));
+  _lastHash = hashCards(cards);
+  renderCategories();
+  renderCards();
+  closeSettings();
+  showToast('✅ Стандартные карточки восстановлены');
+  if (SB_URL && getSBServiceKey()) await saveData();
+}
+
+function updateAllBadges() {
+  const key = localStorage.getItem('imgbb_key');
+  document.querySelectorAll('[id^="ibadge-"],[id^="bibadge-"]').forEach(b => {
+    b.className = key ? 'imgbb-badge' : 'imgbb-badge warn';
+    b.title = key ? 'imgbb подключён' : 'Нет API-ключа';
+  });
+}
+
+
+
+// ===================== LIGHTBOX =====================
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===================== EMOJI PICKER =====================
+function renderEmojiPicker() {
+  const emojis = '🚀📋🎬🖼️📤🛠️✅🔥❓💡📊🎯🔗📌🧩💬📝🔍💎⚡'.split('');
+  // handle multi-byte emojis
+  const emojiList = ['🚀','📋','🎬','🖼️','📤','🛠️','✅','🔥','❓','💡','📊','🎯','🔗','📌','🧩','💬','📝','🔍','💎','⚡','🎨','🎵','🌟','💫','🏆','📱','💻','🎉','🔔','📣'];
+  const picker = document.getElementById('emojiPicker');
+  picker.innerHTML = emojiList.map(e => `
+    <div class="emoji-opt ${e === selectedEmoji ? 'selected' : ''}" onclick="selectEmoji('${e}')">${e}</div>
+  `).join('');
+}
+
+function selectEmoji(e) {
+  selectedEmoji = e;
+  renderEmojiPicker();
+}
+
+function renderColorPicker() {
+  const colors = [
+    { cls: 'ic-red', bg: 'rgba(232,84,84,0.3)' },
+    { cls: 'ic-blue', bg: 'rgba(74,158,255,0.3)' },
+    { cls: 'ic-green', bg: 'rgba(74,202,138,0.3)' },
+    { cls: 'ic-purple', bg: 'rgba(168,122,255,0.3)' },
+    { cls: 'ic-orange', bg: 'rgba(255,138,74,0.3)' },
+    { cls: 'ic-gold', bg: 'rgba(212,168,67,0.3)' },
+    { cls: 'ic-pink', bg: 'rgba(255,100,150,0.3)' },
+    { cls: 'ic-teal', bg: 'rgba(0,200,200,0.3)' },
+  ];
+  const picker = document.getElementById('colorPicker');
+  picker.innerHTML = colors.map(c => `
+    <div class="color-opt ${c.cls === selectedColor ? 'selected' : ''}" style="background:${c.bg}" data-color="${c.cls}" onclick="selectColor('${c.cls}')"></div>
+  `).join('');
+}
+
+function selectColor(cls) {
+  selectedColor = cls;
+  renderColorPicker();
+}
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===================== SORTABLE (touch + mouse) =====================
+function makeSortable(container, itemClass, handleSelector, onDrop) {
+  if (!container) return;
+  container._sortClass = itemClass;
+  container._sortHandle = handleSelector;
+  container._onDrop = onDrop || null;
+
+  container.addEventListener('mousedown', onDragStart, { passive: false });
+  container.addEventListener('touchstart', onDragStart, { passive: false });
+}
+
+let _drag = null; // { el, container, ghost, startY, lastY, items, origIndex }
+
+function onDragStart(e) {
+  const container = e.currentTarget;
+  const handle = e.target.closest(container._sortHandle);
+  if (!handle) return;
+  const el = e.target.closest('.' + container._sortClass);
+  if (!el) return;
+
+  e.preventDefault();
+
+  const touch = e.touches ? e.touches[0] : e;
+  const rect = el.getBoundingClientRect();
+
+  // Create ghost
+  const ghost = el.cloneNode(true);
+  ghost.style.cssText = `
+    position:fixed; left:${rect.left}px; top:${rect.top}px;
+    width:${rect.width}px; opacity:0.9; pointer-events:none;
+    z-index:9999; border-radius:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    transform:scale(1.02);
+    transition:none;
+  `;
+  document.body.appendChild(ghost);
+
+  el.classList.add('dragging');
+
+  _drag = {
+    el, container, ghost,
+    startY: touch.clientY,
+    offsetY: touch.clientY - rect.top,
+    lastY: touch.clientY,
+  };
+
+  document.addEventListener('mousemove', onDragMove, { passive: false });
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('mouseup', onDragEnd);
+  document.addEventListener('touchend', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!_drag) return;
+  e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+  const y = touch.clientY;
+  _drag.lastY = y;
+
+  // Move ghost
+  _drag.ghost.style.top = (y - _drag.offsetY) + 'px';
+
+  // Find insertion point
+  const siblings = Array.from(_drag.container.children).filter(c =>
+    c.classList.contains(_drag.container._sortClass) && c !== _drag.el
+  );
+
+  let insertBefore = null;
+  for (const sib of siblings) {
+    const sibRect = sib.getBoundingClientRect();
+    if (y < sibRect.top + sibRect.height / 2) {
+      insertBefore = sib;
+      break;
+    }
+  }
+
+  // Clear indicators
+  siblings.forEach(s => s.classList.remove('drag-over'));
+  if (insertBefore) insertBefore.classList.add('drag-over');
+
+  // Move element in DOM for live preview
+  if (insertBefore) {
+    _drag.container.insertBefore(_drag.el, insertBefore);
+  } else {
+    _drag.container.appendChild(_drag.el);
+  }
+}
+
+function onDragEnd() {
+  if (!_drag) return;
+
+  _drag.ghost.remove();
+  _drag.el.classList.remove('dragging');
+  Array.from(_drag.container.children).forEach(c => c.classList.remove('drag-over'));
+
+  // Fire callback with new order
+  if (_drag.container._onDrop) {
+    const items = Array.from(_drag.container.children).filter(c =>
+      c.classList.contains(_drag.container._sortClass)
+    );
+    _drag.container._onDrop(items);
+  }
+
+  _drag = null;
+
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('touchmove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+  document.removeEventListener('touchend', onDragEnd);
+}
+
+// ===================== START =====================
+init();
+</script>
+</body>
+</html>
